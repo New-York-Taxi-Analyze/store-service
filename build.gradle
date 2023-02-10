@@ -1,0 +1,13 @@
+plugins {
+  id 'java'
+}
+
+group = 'com.newyorktaxi'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+project.ext {
+  springBootVersion = '3.0.2'
+  lombokVersion = '1.18.+'
+  mapStructVersion = '1.4.1.Final'
+}
