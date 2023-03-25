@@ -14,13 +14,14 @@ configurations {
 	}
 }
 
-repositories {
-	mavenCentral()
-}
-
 dependencies {
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jooq', version: springBootVersion
+	implementation project(':avro')
+
+//	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jooq', version: springBootVersion
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: springBootVersion
 	implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: springBootVersion
+	implementation group: 'org.apache.kafka', name: 'kafka-clients', version: kafkaClientVersion
+	implementation group: 'io.confluent', name: 'kafka-avro-serializer', version: kafkaAvroSerializerVersion
 
 	compileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
 	

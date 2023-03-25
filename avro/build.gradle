@@ -1,0 +1,34 @@
+import com.github.davidmc24.gradle.plugin.avro.GenerateAvroJavaTask
+
+plugins {
+    id 'java'
+    id 'com.github.davidmc24.gradle.plugin.avro-base'  version '1.0.0'
+}
+
+group = 'com.newyorktaxi'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+
+dependencies {
+    implementation group: 'org.apache.avro', name: 'avro', version: '1.11.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+def generateAvro = tasks.register("generateAvro", GenerateAvroJavaTask) {
+    source("src/main/resources/avro")
+    outputDir = file("src/main/java")
+    fieldVisibility = "PRIVATE"
+    enableDecimalLogicalType = true
+}
+
+tasks.named("compileJava").configure {
+    source(generateAvro)
+}
+
+clean {
+    delete "${rootDir}/src/main/java/com/newyorktaxi/avro/model"
+}

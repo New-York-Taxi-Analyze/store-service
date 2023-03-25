@@ -1,0 +1,21 @@
+{
+  "namespace": "com.newyorktaxi.avro.model",
+  "type": "record",
+  "name": "TaxiMessage",
+  "fields": [
+    {
+      "name": "id",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "createdAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

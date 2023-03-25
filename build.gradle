@@ -10,4 +10,6 @@ project.ext {
   springBootVersion = '3.0.2'
   lombokVersion = '1.18.+'
   mapStructVersion = '1.4.1.Final'
+  kafkaClientVersion = '3.2.3'
+  kafkaAvroSerializerVersion = '7.3.1'
 }

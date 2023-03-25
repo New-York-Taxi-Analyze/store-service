@@ -1,3 +1,26 @@
+import org.gradle.api.initialization.resolve.RepositoriesMode
+
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    google()
+    mavenCentral()
+  }
+}
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    google()
+    mavenCentral()
+
+    maven {
+      url "https://packages.confluent.io/maven/"
+    }
+  }
+}
+
 rootProject.name = 'store-service'
 
 include 'core'
+include 'avro'
