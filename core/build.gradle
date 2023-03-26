@@ -14,6 +14,16 @@ configurations {
 	}
 }
 
+bootJar {
+	mainClass = 'com.newyorktaxi.storeservice.StoreServiceApplication'
+}
+
+jar {
+	manifest {
+		attributes 'Main-Class': 'com.newyorktaxi.storeservice.StoreServiceApplication'
+	}
+}
+
 dependencies {
 	implementation project(':avro')
 
