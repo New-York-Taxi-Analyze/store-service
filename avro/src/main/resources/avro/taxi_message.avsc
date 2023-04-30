@@ -1,21 +1,24 @@
 {
-  "namespace": "com.newyorktaxi.avro.model",
   "type": "record",
   "name": "TaxiMessage",
+  "namespace": "com.newyorktaxi.avro.model",
   "fields": [
-    {
-      "name": "id",
-      "type": {
-        "type": "string",
-        "logicalType": "uuid"
-      }
-    },
-    {
-      "name": "createdAt",
-      "type": {
-        "type": "long",
-        "logicalType": "timestamp-millis"
-      }
-    }
+    {"name": "vendorId", "type": ["int", "null"], "default": 0},
+    {"name": "tpepPickupDatetime", "type": ["string", "null"], "default": ""},
+    {"name": "tpepDropoffDatetime", "type": ["string", "null"], "default": ""},
+    {"name": "passengerCount", "type": ["int", "null"], "default": 0},
+    {"name": "tripDistance", "type": ["float", "null"], "default": 0.0},
+    {"name": "rateCodeId", "type": ["int", "null"], "default": 0},
+    {"name": "storeAndFwdFlag", "type": ["string", "null"], "default": ""},
+    {"name": "puLocationId", "type": ["int", "null"], "default": 0},
+    {"name": "doLocationId", "type": ["int", "null"], "default": 0},
+    {"name": "paymentType", "type": ["int", "null"], "default": 0},
+    {"name": "fareAmount", "type": ["double", "null"], "default": 0.0},
+    {"name": "extra", "type": ["double", "null"], "default": 0.0},
+    {"name": "mtaTax", "type": ["double", "null"], "default": 0.0},
+    {"name": "tipAmount", "type": ["double", "null"], "default": 0.0},
+    {"name": "tollsAmount", "type": ["double", "null"], "default": 0.0},
+    {"name": "improvementSurcharge", "type": ["double", "null"], "default": 0.0},
+    {"name": "totalAmount", "type": ["double", "null"], "default": 0.0}
   ]
 }
