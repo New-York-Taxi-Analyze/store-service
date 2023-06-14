@@ -1,6 +1,12 @@
 package com.newyorktaxi.storeservice.gateway.kafka;
 
 import com.newyorktaxi.avro.model.TaxiMessage;
+import com.newyorktaxi.storeservice.mapper.TaxiTripMapper;
+import com.newyorktaxi.storeservice.usecase.FunctionalUseCase;
+import com.newyorktaxi.storeservice.usecase.params.TaxiTripParams;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -10,16 +16,27 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TaxiMessageKafkaListener implements AcknowledgingMessageListener<String, Object> {
+
+    FunctionalUseCase<TaxiTripParams, Void> saveTaxiTripUseCase;
+    TaxiTripMapper taxiTripMapper;
 
     @Override
     @KafkaListener(id = "${kafka-consumer-config.taxi-message-group-id}",
             topics = "${kafka-consumer-config.taxi-message-topic}")
     public void onMessage(ConsumerRecord<String, Object> record, Acknowledgment acknowledgment) {
-        if(record.value() instanceof TaxiMessage taxiMessage) {
+        if (record.value() instanceof TaxiMessage taxiMessage) {
             log.info("Received {} messages from Kafka", taxiMessage);
-        }
 
-        acknowledgment.acknowledge();
+            final TaxiTripParams taxiTrip = taxiTripMapper.toTaxiTripParams(taxiMessage);
+            saveTaxiTripUseCase.execute(taxiTrip);
+
+            log.info("Saved {} to database", taxiTrip);
+            acknowledgment.acknowledge();
+        } else {
+            log.error("Received unknown message type: {}", record.value());
+        }
     }
 }

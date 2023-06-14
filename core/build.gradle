@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'org.flywaydb.flyway' version '7.15.0'
 	id 'org.springframework.boot' version '3.0.2'
 	id 'io.spring.dependency-management' version '1.1.0'
 }
@@ -24,18 +25,42 @@ jar {
 	}
 }
 
+compileJava {
+	options.compilerArgs += [
+			'-Amapstruct.suppressGeneratorTimestamp=true',
+			'-Amapstruct.suppressGeneratorVersionInfoComment=true',
+			'-Amapstruct.defaultComponentModel=spring',
+			'-Amapstruct.defaultInjectionStrategy=constructor'
+	]
+}
+
+flyway {
+	url = 'jdbc:postgresql://localhost:5556/service'
+	user = 'service'
+	password = 'service'
+	baselineOnMigrate = true
+	baselineVersion = '1.0' // Specify the version to use for baseline
+}
+
 dependencies {
 	implementation project(':avro')
 
-//	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jooq', version: springBootVersion
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: springBootVersion
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: springBootVersion
 	implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: springBootVersion
 	implementation group: 'org.apache.kafka', name: 'kafka-clients', version: kafkaClientVersion
 	implementation group: 'io.confluent', name: 'kafka-avro-serializer', version: kafkaAvroSerializerVersion
 
+	implementation group: 'org.hibernate.validator', name:'hibernate-validator', version:'8.0.0.Final'
+	implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.8'
+
 	compileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
-	
 	annotationProcessor group: 'org.projectlombok', name: 'lombok', version: lombokVersion
+
+	compileOnly group: 'org.mapstruct', name: 'mapstruct', version: mapStructVersion
+	testCompileOnly group: 'org.mapstruct', name: 'mapstruct', version: mapStructVersion
+	annotationProcessor group: 'org.mapstruct', name: 'mapstruct-processor', version: mapStructVersion
+	testAnnotationProcessor group: 'org.mapstruct', name: 'mapstruct-processor', version: mapStructVersion
 
 	testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: springBootVersion
 	testImplementation group: 'org.springframework.kafka', name: 'spring-kafka-test', version: springBootVersion
