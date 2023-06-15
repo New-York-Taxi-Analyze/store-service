@@ -27,13 +27,14 @@ public class TaxiMessageKafkaListener implements AcknowledgingMessageListener<St
     @KafkaListener(id = "${kafka-consumer-config.taxi-message-group-id}",
             topics = "${kafka-consumer-config.taxi-message-topic}")
     public void onMessage(ConsumerRecord<String, Object> record, Acknowledgment acknowledgment) {
+        log.info("Received record: {}", record);
         if (record.value() instanceof TaxiMessage taxiMessage) {
-            log.info("Received {} messages from Kafka", taxiMessage);
+            log.info("Processing {} messages from Kafka", taxiMessage);
 
             final TaxiTripParams taxiTrip = taxiTripMapper.toTaxiTripParams(taxiMessage);
             saveTaxiTripUseCase.execute(taxiTrip);
 
-            log.info("Saved {} to database", taxiTrip);
+            log.info("Successfully saved {} to database", taxiTrip);
             acknowledgment.acknowledge();
         } else {
             log.error("Received unknown message type: {}", record.value());

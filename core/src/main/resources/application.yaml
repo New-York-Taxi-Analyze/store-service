@@ -19,10 +19,10 @@ spring:
     enabled: true
     schemas: public
   kafka:
-    bootstrap-servers: localhost:9092, localhost:9093, localhost:9094
     template:
-      default-topic: library-events
+      default-topic: taxi-messages
     consumer:
+      bootstrap-servers: localhost:9092, localhost:9093, localhost:9094
       group-id: taxi-message-topic-consumer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
