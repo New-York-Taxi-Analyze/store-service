@@ -70,6 +70,8 @@ dependencies {
 	testImplementation group: 'org.springframework.kafka', name: 'spring-kafka-test', version: '3.0.7'
 
 	testImplementation group: 'org.awaitility', name: 'awaitility', version: '4.2.0'
+	testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', version: '4.0.3'
+	testImplementation group: 'org.springframework', name: 'spring-core', version: '6.0.10'
 }
 
 sourceSets{
