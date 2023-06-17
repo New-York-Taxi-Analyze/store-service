@@ -9,14 +9,17 @@ import com.newyorktaxi.storeservice.repository.TaxiTripRepository;
 import lombok.AccessLevel;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
@@ -26,8 +29,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 
-@SpringBootTest(classes = {StoreServiceApplication.class, TaxiMessageKafkaListener.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = {StoreServiceApplication.class, TaxiMessageKafkaListener.class},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWireMock(port = 0)
 @EmbeddedKafka(topics = "taxi-messages", partitions = 3)
 @TestPropertySource(properties = {
@@ -51,7 +57,7 @@ class TaxiMessageKafkaListenerTest {
     @Autowired
     KafkaListenerEndpointRegistry endpointRegistry;
 
-    @Autowired
+    @SpyBean
     TaxiMessageKafkaListener taxiMessageKafkaListener;
 
     @Autowired
@@ -77,12 +83,15 @@ class TaxiMessageKafkaListenerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     @SneakyThrows
     void testOnMessage() {
         final TaxiMessage taxiMessage = TestData.buildTaxiMessage();
         kafkaTemplate.sendDefault(taxiMessage).get();
 
-        await().atMost(1, TimeUnit.SECONDS)
+        await().atMost(5, TimeUnit.SECONDS)
+                .pollDelay(100, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> assertThat(taxiTripRepository.count()).isEqualTo(1));
+        verify(taxiMessageKafkaListener).onMessage(any(ConsumerRecord.class), any(Acknowledgment.class));
     }
 }

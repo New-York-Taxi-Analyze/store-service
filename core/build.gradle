@@ -72,6 +72,8 @@ dependencies {
 	testImplementation group: 'org.awaitility', name: 'awaitility', version: '4.2.0'
 	testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', version: '4.0.3'
 	testImplementation group: 'org.springframework', name: 'spring-core', version: '6.0.10'
+	testImplementation group: 'org.testcontainers', name: 'postgresql', version: '1.18.3'
+	testImplementation group: 'org.flywaydb', name: 'flyway-core', version: '9.19.4'
 }
 
 sourceSets{
