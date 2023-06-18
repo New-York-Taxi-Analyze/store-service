@@ -9,35 +9,39 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.listener.AcknowledgingMessageListener;
-import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class TaxiMessageKafkaListener implements AcknowledgingMessageListener<String, Object> {
+public class TaxiMessageKafkaListener {
 
     FunctionalUseCase<TaxiTripParams, Void> saveTaxiTripUseCase;
     TaxiTripMapper taxiTripMapper;
 
-    @Override
+    @RetryableTopic(attempts = "${kafka-consumer-config.taxi-message-retry-attempts}",
+            topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
+            backoff = @Backoff(delayExpression = "${kafka-consumer-config.taxi-message-retry-delay}",
+                    multiplierExpression = "${kafka-consumer-config.taxi-message-retry-multiplier}"))
     @KafkaListener(id = "${kafka-consumer-config.taxi-message-group-id}",
             topics = "${kafka-consumer-config.taxi-message-topic}")
-    public void onMessage(ConsumerRecord<String, Object> record, Acknowledgment acknowledgment) {
+    public void onMessage(ConsumerRecord<String, TaxiMessage> record) {
         log.info("Received record: {}", record);
-        if (record.value() instanceof TaxiMessage taxiMessage) {
-            log.info("Processing {} messages from Kafka", taxiMessage);
 
-            final TaxiTripParams taxiTrip = taxiTripMapper.toTaxiTripParams(taxiMessage);
-            saveTaxiTripUseCase.execute(taxiTrip);
+        final TaxiTripParams taxiTrip = taxiTripMapper.toTaxiTripParams(record.value());
+        saveTaxiTripUseCase.execute(taxiTrip);
 
-            log.info("Successfully saved {} to database", taxiTrip);
-            acknowledgment.acknowledge();
-        } else {
-            log.error("Received unknown message type: {}", record.value());
-        }
+        log.info("Successfully saved {} to database", taxiTrip);
+    }
+
+    @DltHandler
+    public void dltHandler(ConsumerRecord<String, TaxiMessage> record) {
+        log.info("Received record from DLT: {}", record);
     }
 }

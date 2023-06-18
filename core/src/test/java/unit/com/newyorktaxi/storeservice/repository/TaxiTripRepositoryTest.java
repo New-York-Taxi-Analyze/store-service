@@ -17,7 +17,10 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
+@DataJpaTest(properties = {
+        "spring.flyway.clean-disabled=false",
+        "spring.flyway.locations=classpath:db/migration"
+})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ExtendWith(ClearDatabaseExtension.class)
 class TaxiTripRepositoryTest {
@@ -33,8 +36,6 @@ class TaxiTripRepositoryTest {
         registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
         registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
-        registry.add("spring.flyway.clean-disabled", () -> false);
-        registry.add("spring.flyway.locations", () -> "classpath:db/migration");
     }
 
     @Autowired

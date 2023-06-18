@@ -33,3 +33,6 @@ spring:
 kafka-consumer-config:
   taxi-message-group-id: taxi-message-topic-consumer
   taxi-message-topic: taxi-messages
+  taxi-message-retry-attempts: 3
+  taxi-message-retry-delay: 1000
+  taxi-message-retry-multiplier: 2
