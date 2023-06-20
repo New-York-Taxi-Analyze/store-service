@@ -54,6 +54,10 @@ dependencies {
 	implementation group: 'org.hibernate.validator', name:'hibernate-validator', version:'8.0.0.Final'
 	implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.8'
 
+	// shedlock for distributed lock management
+	implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-spring', version: '5.4.0'
+	implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc-template', version: '5.4.0'
+
 	compileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
 	testCompileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
 	annotationProcessor group: 'org.projectlombok', name: 'lombok', version: lombokVersion

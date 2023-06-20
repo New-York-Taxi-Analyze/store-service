@@ -6,10 +6,12 @@ import com.newyorktaxi.storeservice.StoreServiceApplication;
 import com.newyorktaxi.storeservice.TestData;
 import com.newyorktaxi.storeservice.TestUtil;
 import com.newyorktaxi.storeservice.mapper.TaxiTripMapper;
+import com.newyorktaxi.storeservice.repository.FailureMessageRepository;
 import com.newyorktaxi.storeservice.repository.TaxiTripRepository;
 import lombok.AccessLevel;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +51,6 @@ import static org.mockito.Mockito.verify;
         "spring.kafka.producer.value-serializer=io.confluent.kafka.serializers.KafkaAvroSerializer",
         "spring.kafka.producer.properties.schema.registry.url=http://localhost:${wiremock.server.port}",
         "kafka-consumer-config.taxi-message-retry-attempts=1"
-
 })
 @FieldDefaults(level = AccessLevel.PRIVATE)
 class TaxiMessageKafkaListenerTest {
@@ -77,6 +78,9 @@ class TaxiMessageKafkaListenerTest {
     @Autowired
     TaxiTripRepository taxiTripRepository;
 
+    @Autowired
+    FailureMessageRepository failureMessageRepository;
+
     @BeforeEach
     void setUp() {
         endpointRegistry.getListenerContainers()
@@ -95,11 +99,12 @@ class TaxiMessageKafkaListenerTest {
     @AfterEach
     void tearDown() {
         taxiTripRepository.deleteAll();
+        failureMessageRepository.deleteAll();
     }
 
     @Test
     @SneakyThrows
-    @DisplayName("test on message")
+    @DisplayName("Test on message")
     void testOnMessage() {
         final TaxiMessage taxiMessage = TestData.buildTaxiMessage();
         kafkaTemplate.sendDefault(taxiMessage).get();
@@ -111,21 +116,23 @@ class TaxiMessageKafkaListenerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     @SneakyThrows
-    @DisplayName("test dead letter topic")
+    @DisplayName("Successful message processing")
     void testDeadLetterTopic() {
-        final TaxiMessage actualTaxiMessage = TestData.buildTaxiMessage();
-        final ArgumentCaptor<TaxiMessage> taxiMessageCaptor = ArgumentCaptor.forClass(TaxiMessage.class);
-        final ArgumentCaptor<String> topicDltCaptor = ArgumentCaptor.forClass(String.class);
+        final String expectedExceptionMessage = "Listener failed; Test exception";
+        final TaxiMessage expectedTaxiMessage = TestData.buildTaxiMessage();
+        final ArgumentCaptor<ConsumerRecord<String, TaxiMessage>> recordCaptor = ArgumentCaptor.forClass(ConsumerRecord.class);
+        final ArgumentCaptor<String> exceptionCaptor = ArgumentCaptor.forClass(String.class);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        doThrow(new RuntimeException("Test exception")).when(taxiTripMapper).toTaxiTripParams(actualTaxiMessage);
+        doThrow(new RuntimeException("Test exception")).when(taxiTripMapper).toTaxiTripParams(expectedTaxiMessage);
         doAnswer(invocation -> {
             latch.countDown();
             return null;
-        }).when(taxiMessageKafkaListener).dltHandler(taxiMessageCaptor.capture(), topicDltCaptor.capture());
+        }).when(taxiMessageKafkaListener).dltHandler(recordCaptor.capture(), exceptionCaptor.capture());
 
-        kafkaTemplate.sendDefault(actualTaxiMessage).get();
+        kafkaTemplate.sendDefault(expectedTaxiMessage).get();
 
         boolean await = latch.await(5, TimeUnit.SECONDS);
 
@@ -133,19 +140,36 @@ class TaxiMessageKafkaListenerTest {
                 .as("awaiting for latch")
                 .isTrue();
 
-        verify(taxiMessageKafkaListener).onMessage(actualTaxiMessage);
-        verify(taxiMessageKafkaListener).dltHandler(actualTaxiMessage, topicDlt);
-
-        final TaxiMessage expectedTaxiMessage = taxiMessageCaptor.getValue();
-        final String expectedTopicDlt = topicDltCaptor.getValue();
+        final ConsumerRecord<String, TaxiMessage> actualTaxiMessage = recordCaptor.getValue();
+        final String actualExceptionMessage = exceptionCaptor.getValue();
 
         assertAll(
-                () -> assertThat(expectedTaxiMessage)
+                () -> assertThat(actualTaxiMessage.value())
                         .as("expected taxi message")
-                        .isEqualTo(actualTaxiMessage),
-                () -> assertThat(expectedTopicDlt)
-                        .as("expected topic dlt")
-                        .isEqualTo(topicDlt)
+                        .isEqualTo(expectedTaxiMessage),
+                () -> assertThat(actualExceptionMessage)
+                        .as("expected exception message")
+                        .contains(expectedExceptionMessage)
         );
+
+        verify(taxiMessageKafkaListener).onMessage(expectedTaxiMessage);
+        verify(taxiMessageKafkaListener).dltHandler(actualTaxiMessage, "Listener failed; Test exception");
+    }
+
+    @Test
+    @SneakyThrows
+    @DisplayName("Successful message processing with real data")
+    void testDeadLetterTopicWithRealData() {
+        final TaxiMessage expectedTaxiMessage = TestData.buildTaxiMessage();
+
+        doThrow(new RuntimeException("Test exception"))
+                .when(taxiTripMapper)
+                .toTaxiTripParams(expectedTaxiMessage);
+
+        kafkaTemplate.sendDefault(TestData.TOPIC_KEY, expectedTaxiMessage).get();
+
+        await().atMost(5, TimeUnit.SECONDS)
+                .pollDelay(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> assertThat(failureMessageRepository.count()).isEqualTo(1));
     }
 }

@@ -37,3 +37,10 @@ kafka-consumer-config:
   taxi-message-retry-attempts: 3
   taxi-message-retry-delay: 1000
   taxi-message-retry-multiplier: 2
+
+scheduler:
+  default-lock-at-most-for: PT30S
+  retry-failed-message:
+    cron-expression: 1 * * * * *
+    lock-at-least-for: PT5S
+    lock-at-most-for: PT30S
